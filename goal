@@ -1,0 +1,1284 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SIP Goal Planner · Financial Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root[data-theme="dark"]{
+  --bg:#0d1117;--surface:#161b22;--surface2:#1c2128;--surface3:#21262d;
+  --border:#30363d;--border2:#3d444d;
+  --accent:#2ea043;--accent-h:#3fb950;--accent2:#388bfd;--accent3:#f78166;--accent4:#e3b341;
+  --text:#e6edf3;--text2:#8b949e;--text3:#484f58;
+  --danger:#f85149;--success:#2ea043;--success-t:#3fb950;
+  --wd:#a78bfa;--wd-bg:rgba(167,139,250,.12);--wd-border:rgba(167,139,250,.3);
+  --badge-bg:rgba(46,160,67,.15);--badge-b:rgba(46,160,67,.3);--shadow:rgba(0,0,0,.3);
+}
+:root[data-theme="light"]{
+  --bg:#f6f8fa;--surface:#fff;--surface2:#f6f8fa;--surface3:#eaeef2;
+  --border:#d0d7de;--border2:#c6cdd5;
+  --accent:#1a7f37;--accent-h:#2da44e;--accent2:#0969da;--accent3:#d1242f;--accent4:#9a6700;
+  --text:#1f2328;--text2:#636c76;--text3:#9198a1;
+  --danger:#d1242f;--success:#1a7f37;--success-t:#1a7f37;
+  --wd:#7c3aed;--wd-bg:rgba(124,58,237,.08);--wd-border:rgba(124,58,237,.25);
+  --badge-bg:rgba(26,127,55,.1);--badge-b:rgba(26,127,55,.25);--shadow:rgba(0,0,0,.08);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Inter',-apple-system,sans-serif;font-size:14px;line-height:1.5;min-height:100vh;transition:background .25s,color .25s}
+.container{max-width:1280px;margin:0 auto;padding:0 24px 60px}
+header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;position:sticky;top:0;z-index:100;box-shadow:0 1px 3px var(--shadow)}
+.header-inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;height:56px;gap:16px}
+.brand{display:flex;align-items:center;gap:8px;text-decoration:none}
+.brand-icon{width:32px;height:32px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.brand-name{font-size:15px;font-weight:600;color:var(--text)}.brand-name span{color:var(--accent)}
+.header-right{display:flex;align-items:center;gap:12px}
+.header-sub{font-size:12px;color:var(--text3);font-family:'JetBrains Mono',monospace}
+.theme-toggle{background:var(--surface2);border:1px solid var(--border);border-radius:20px;cursor:pointer;padding:4px 10px;display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);font-family:'Inter',sans-serif;transition:all .2s;white-space:nowrap}
+.theme-toggle:hover{background:var(--surface3);border-color:var(--border2);color:var(--text)}
+.page-header{padding:28px 0 20px}
+.page-title{font-size:22px;font-weight:600;color:var(--text);letter-spacing:-.4px;margin-bottom:4px}
+.page-subtitle{font-size:13px;color:var(--text2)}
+.settings-panel{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px 20px;margin-bottom:24px;display:flex;align-items:flex-end;gap:24px;flex-wrap:wrap}
+.settings-panel-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);margin-bottom:12px;width:100%}
+.settings-field{display:flex;flex-direction:column;gap:4px}
+.settings-label{font-size:12px;font-weight:500;color:var(--text2)}
+.settings-input{background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:13px;padding:6px 10px;width:130px;outline:none;transition:border-color .15s,box-shadow .15s}
+.settings-input:focus{border-color:var(--accent2);box-shadow:0 0 0 3px rgba(56,139,253,.15)}
+.settings-desc,.hint-text{font-size:11px;color:var(--text3)}
+.hint-text{font-family:'JetBrains Mono',monospace;margin-top:3px;min-height:14px}
+.settings-divider{width:1px;height:48px;background:var(--border);align-self:center;flex-shrink:0}
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.section-title{font-size:14px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:7px}
+.section-title .dot{width:7px;height:7px;border-radius:50%;background:var(--accent);flex-shrink:0}
+.section-badge{font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--text3);background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:2px 8px}
+/* GOAL CARDS */
+.goals-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(400px,1fr));gap:14px;margin-bottom:18px}
+.goal-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px;transition:border-color .2s,box-shadow .2s,opacity .2s;animation:cardIn .25s ease both}
+.goal-card.disabled{opacity:.45;pointer-events:none}
+.goal-card.disabled .goal-toggle-area{pointer-events:all}
+@keyframes cardIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.goal-card:hover{border-color:var(--border2);box-shadow:0 2px 8px var(--shadow)}
+.goal-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.goal-card-left{display:flex;align-items:center;gap:8px}
+.goal-card-right{display:flex;align-items:center;gap:8px}
+.goal-number{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--accent);font-weight:500;letter-spacing:.5px;background:var(--badge-bg);border:1px solid var(--badge-b);padding:2px 8px;border-radius:20px}
+.toggle-wrap{display:flex;align-items:center;gap:5px;cursor:pointer;user-select:none}
+.toggle-label{font-size:11px;font-weight:500;color:var(--text2)}
+.toggle-sw{position:relative;width:32px;height:18px;flex-shrink:0}
+.toggle-sw input{opacity:0;width:0;height:0;position:absolute}
+.toggle-track{position:absolute;inset:0;background:var(--border2);border-radius:18px;transition:background .2s}
+.toggle-thumb{position:absolute;top:3px;left:3px;width:12px;height:12px;background:#fff;border-radius:50%;transition:transform .2s}
+.toggle-sw input:checked+.toggle-track{background:var(--accent)}
+.toggle-sw input:checked~.toggle-thumb{transform:translateX(14px)}
+.remove-btn{background:none;border:1px solid var(--border);color:var(--text3);cursor:pointer;width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;transition:all .2s;font-size:12px;line-height:1}
+.remove-btn:hover{border-color:var(--danger);color:var(--danger);background:rgba(248,81,73,.08)}
+.goal-name-input{width:100%;background:transparent;border:none;border-bottom:1px solid var(--border);color:var(--text);font-family:'Inter',sans-serif;font-size:14px;font-weight:600;padding:4px 0 8px;margin-bottom:14px;outline:none;transition:border-color .15s}
+.goal-name-input:focus{border-color:var(--accent2)}
+.goal-name-input::placeholder{color:var(--text3);font-weight:400}
+.goal-fields{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.field-group{display:flex;flex-direction:column;gap:4px}
+.field-label{font-size:11px;font-weight:500;color:var(--text2)}
+.field-input{background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:12px;padding:6px 9px;outline:none;transition:border-color .15s,box-shadow .15s;width:100%}
+.field-input:focus{border-color:var(--accent2);box-shadow:0 0 0 3px rgba(56,139,253,.12)}
+/* OPTIONAL SECTIONS (lumpsum / withdrawals) */
+.opt-section{margin-top:12px;padding-top:12px;border-top:1px dashed var(--border)}
+.opt-section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:0}
+.opt-section-title{font-size:11px;font-weight:600;color:var(--text2);display:flex;align-items:center;gap:5px}
+.opt-fields{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.opt-fields.hidden{display:none}
+.opt-note{font-size:10px;color:var(--text3);font-family:'JetBrains Mono',monospace;margin-top:4px;grid-column:span 2}
+/* WITHDRAWAL LIST */
+.wd-list{margin-top:10px;display:flex;flex-direction:column;gap:8px}
+.wd-item{background:var(--wd-bg);border:1px solid var(--wd-border);border-radius:8px;padding:10px 12px;position:relative;animation:cardIn .2s ease both}
+.wd-item-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.wd-item-label{font-size:11px;font-weight:600;color:var(--wd);letter-spacing:.3px}
+.wd-item-fields{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.wd-field-label{font-size:10px;font-weight:500;color:var(--text3);margin-bottom:3px}
+.wd-input{background:var(--surface);border:1px solid var(--border);border-radius:5px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:12px;padding:5px 8px;outline:none;transition:border-color .15s;width:100%}
+.wd-input:focus{border-color:var(--wd);box-shadow:0 0 0 2px rgba(124,58,237,.12)}
+.wd-add-btn{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:500;color:var(--wd);background:var(--wd-bg);border:1px dashed var(--wd-border);border-radius:6px;padding:5px 10px;cursor:pointer;transition:all .15s;margin-top:8px;font-family:'Inter',sans-serif}
+.wd-add-btn:hover{background:var(--wd-bg);border-style:solid;opacity:.85}
+.wd-remove-btn{background:none;border:none;color:var(--text3);cursor:pointer;font-size:11px;padding:2px 4px;border-radius:4px;transition:color .15s}
+.wd-remove-btn:hover{color:var(--danger)}
+/* BUTTONS */
+.btn{font-family:'Inter',sans-serif;font-size:13px;font-weight:500;border:none;cursor:pointer;border-radius:6px;padding:8px 16px;transition:all .15s;display:inline-flex;align-items:center;gap:6px;line-height:1}
+.btn-ghost{background:var(--surface2);color:var(--text2);border:1px solid var(--border)}
+.btn-ghost:hover{background:var(--surface3);color:var(--text);border-color:var(--border2)}
+.btn-primary{background:var(--accent);color:#fff;border:1px solid transparent}
+.btn-primary:hover{background:var(--accent-h);box-shadow:0 2px 8px rgba(46,160,67,.3)}
+.btn-export{background:var(--accent2);color:#fff;border:1px solid transparent}
+.btn-export:hover{opacity:.88;box-shadow:0 2px 8px rgba(9,105,218,.3)}
+.btn-actions{display:flex;gap:10px;margin-bottom:32px;flex-wrap:wrap}
+/* RESULTS */
+.divider{height:1px;background:var(--border);margin:28px 0}
+.results-section{display:none}.results-section.visible{display:block}
+.export-bar{display:flex;justify-content:flex-end;align-items:center;gap:10px;margin-bottom:20px}
+.export-bar-label{font-size:12px;color:var(--text3)}
+.feasibility-banner{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 18px;margin-bottom:24px;display:flex;align-items:flex-start;gap:12px}
+.feasibility-banner .bi{font-size:18px;flex-shrink:0;margin-top:1px}
+.feasibility-banner .bb{flex:1}
+.feasibility-banner .bt{font-size:13px;font-weight:600;color:var(--text);margin-bottom:3px}
+.feasibility-banner .bd{font-size:12px;color:var(--text2)}
+.feasibility-banner.ok{border-left:3px solid var(--success)}
+.feasibility-banner.warn{border-left:3px solid var(--accent4)}
+.feasibility-banner.alert{border-left:3px solid var(--danger)}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(195px,1fr));gap:12px;margin-bottom:28px}
+.kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 18px;animation:fadeUp .3s ease both}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.kpi-label{font-size:11px;font-weight:500;color:var(--text2);margin-bottom:6px;line-height:1.3}
+.kpi-value{font-size:20px;font-weight:700;color:var(--text);letter-spacing:-.5px;margin-bottom:3px;font-family:'JetBrains Mono',monospace}
+.kpi-value.accent{color:var(--accent)}.kpi-value.blue{color:var(--accent2)}.kpi-value.orange{color:var(--accent3)}.kpi-value.purple{color:var(--wd)}
+.kpi-sub{font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace}
+.goal-results-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:12px;margin-bottom:28px}
+.goal-result-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 18px;animation:fadeUp .35s ease both}
+.goal-result-name{font-size:13px;font-weight:600;margin-bottom:12px;color:var(--text);display:flex;align-items:center;gap:7px}
+.goal-color-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.goal-result-row{display:flex;justify-content:space-between;align-items:baseline;padding:5px 0;border-bottom:1px solid var(--border);gap:8px}
+.goal-result-row:last-child{border-bottom:none}
+.grk{font-size:12px;color:var(--text2);white-space:nowrap}
+.grv{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text);font-weight:500;text-align:right}
+.grv.hl{color:var(--accent);font-size:13px;font-weight:600}
+.grv.lump{color:var(--accent2)}.grv.wd{color:var(--wd)}
+.goal-progress-wrap{margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
+.goal-progress-label{display:flex;justify-content:space-between;font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--text3);margin-bottom:5px}
+.goal-progress-bar-bg{height:5px;background:var(--surface3);border-radius:3px;overflow:hidden}
+.goal-progress-bar-fill{height:100%;border-radius:3px;transition:width .5s ease}
+.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:28px}
+@media(max-width:900px){.charts-grid{grid-template-columns:1fr}.goals-grid{grid-template-columns:1fr}}
+.chart-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px;animation:fadeUp .4s ease both}
+.chart-title{font-size:12px;font-weight:600;color:var(--text2);margin-bottom:14px;text-transform:uppercase;letter-spacing:.6px}
+.chart-wrap{position:relative;height:250px}
+.table-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:28px;animation:fadeUp .45s ease both}
+.table-card-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.table-card-title{font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.6px}
+.table-note{font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace}
+.table-overflow{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead th{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);padding:9px 14px;text-align:right;border-bottom:1px solid var(--border);white-space:nowrap;background:var(--surface2)}
+thead th:first-child{text-align:left}
+tbody tr{border-bottom:1px solid var(--border);transition:background .1s}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:var(--surface2)}
+tbody td{padding:9px 14px;text-align:right;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text2);white-space:nowrap}
+tbody td:first-child{text-align:left;font-family:'Inter',sans-serif;font-size:12px;color:var(--text);font-weight:500}
+.total-row td{background:var(--surface3);color:var(--text)!important;font-weight:600;border-top:1px solid var(--border2)}
+.total-row td:first-child{color:var(--accent)!important}
+.wd-row td{background:var(--wd-bg)!important;color:var(--wd)!important}
+.wd-row td:first-child{color:var(--wd)!important}
+.hike-badge{display:inline-flex;align-items:center;gap:2px;padding:2px 6px;border-radius:4px;font-size:10px;font-family:'JetBrains Mono',monospace}
+.hike-badge.up{background:rgba(46,160,67,.12);color:var(--success-t)}
+.hike-badge.down{background:rgba(248,81,73,.1);color:var(--danger)}
+.hike-badge.base{background:var(--surface3);color:var(--text3)}
+.wd-badge{display:inline-flex;align-items:center;gap:2px;padding:2px 6px;border-radius:4px;font-size:10px;font-family:'JetBrains Mono',monospace;background:var(--wd-bg);color:var(--wd)}
+.empty-notice{text-align:center;padding:48px 20px;color:var(--text3);font-size:13px;border:1px dashed var(--border);border-radius:10px;margin-bottom:14px}
+.empty-notice .icon{font-size:28px;margin-bottom:10px;opacity:.5}
+::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+footer{padding:20px 0;border-top:1px solid var(--border);text-align:center;font-size:11px;color:var(--text3);margin-top:40px}
+[data-tip]{position:relative;cursor:help}
+[data-tip]:hover::after{content:attr(data-tip);position:absolute;bottom:120%;left:50%;transform:translateX(-50%);background:var(--surface3);border:1px solid var(--border2);color:var(--text2);font-size:11px;font-family:'Inter',sans-serif;padding:5px 9px;border-radius:5px;white-space:nowrap;z-index:200;box-shadow:0 3px 10px var(--shadow);pointer-events:none}
+</style>
+</head>
+<body>
+<header>
+  <div class="header-inner">
+    <div class="brand"><div class="brand-icon">📊</div><span class="brand-name">SIP<span> Planner</span></span></div>
+    <div class="header-right">
+      <span class="header-sub">GOAL-BASED · INFLATION-ADJUSTED · STEP-UP · WITHDRAWALS</span>
+      <button class="theme-toggle" onclick="toggleTheme()"><span id="themeIcon">🌙</span><span id="themeLabel">Dark</span></button>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+  <div class="page-header">
+    <h1 class="page-title">Financial Goal Planner</h1>
+    <p class="page-subtitle">Plan SIP investments with inflation adjustment, step-up strategy, lump sum, and multiple partial withdrawals per goal.</p>
+  </div>
+
+  <div class="settings-panel">
+    <div class="settings-panel-title">Global Settings</div>
+    <div class="settings-field">
+      <div class="settings-label">Currency Symbol</div>
+      <input class="settings-input" id="currencySymbol" type="text" value="₹" maxlength="4">
+    </div>
+    <div class="settings-divider"></div>
+    <div class="settings-field">
+      <div class="settings-label" data-tip="% of your monthly salary invested in SIPs">Salary Allocation %</div>
+      <input class="settings-input" id="salaryPct" type="number" value="30" min="1" max="100" step="1" oninput="updateHints()">
+      <div class="hint-text" id="salaryHint">30% of salary → invested monthly</div>
+    </div>
+    <div class="settings-field">
+      <div class="settings-label" data-tip="Annual step-up % applied to SIP every year">SIP Step-Up % / Year</div>
+      <input class="settings-input" id="sipGrowthRate" type="number" value="10" min="0" max="50" step="0.5" oninput="updateHints()">
+      <div class="hint-text" id="sipHint">SIP grows 10% every year</div>
+    </div>
+    <div class="settings-field">
+      <div class="settings-label" data-tip="Optional — only used for feasibility check">Current Monthly Salary (Optional)</div>
+      <input class="settings-input" id="currentSalary" type="number" placeholder="e.g. 100000" oninput="updateHints()">
+      <div class="settings-desc">Used only for feasibility check</div>
+    </div>
+  </div>
+
+  <div class="section-header">
+    <div class="section-title"><span class="dot"></span> Financial Goals</div>
+    <span class="section-badge" id="goalCountBadge">0 goals</span>
+  </div>
+  <div class="goals-grid" id="goalsContainer">
+    <div class="empty-notice" id="emptyState"><div class="icon">🎯</div>No goals yet. Add your first financial goal below.</div>
+  </div>
+  <div class="btn-actions">
+    <button class="btn btn-ghost" onclick="addGoal()">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add Goal
+    </button>
+    <button class="btn btn-primary" onclick="calculate()">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Calculate Plan
+    </button>
+    <button class="btn btn-ghost" onclick="resetAll()" style="margin-left:auto">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4"/></svg>Reset
+    </button>
+  </div>
+
+  <div class="results-section" id="resultsSection">
+    <div class="divider"></div>
+    <div class="export-bar">
+      <span class="export-bar-label">Download calculated results →</span>
+      <button class="btn btn-export" onclick="exportToExcel()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export to Excel
+      </button>
+    </div>
+    <div id="feasibilityBanner" class="feasibility-banner ok" style="display:none">
+      <div class="bi" id="bannerIcon">✅</div>
+      <div class="bb"><div class="bt" id="bannerTitle"></div><div class="bd" id="bannerDesc"></div></div>
+    </div>
+    <div class="section-header"><div class="section-title"><span class="dot"></span> Plan Summary</div></div>
+    <div class="kpi-grid" id="kpiGrid"></div>
+    <div class="section-header"><div class="section-title"><span class="dot"></span> Per-Goal Breakdown</div></div>
+    <div class="goal-results-grid" id="goalResultsGrid"></div>
+    <div class="section-header"><div class="section-title"><span class="dot"></span> Visualisation</div></div>
+    <div class="charts-grid">
+      <div class="chart-card"><div class="chart-title">Monthly SIP by Goal (Year 1)</div><div class="chart-wrap"><canvas id="sipPieChart"></canvas></div></div>
+      <div class="chart-card"><div class="chart-title">Total SIP + Required Salary Over Years</div><div class="chart-wrap"><canvas id="salaryLineChart"></canvas></div></div>
+    </div>
+    <div class="charts-grid">
+      <div class="chart-card"><div class="chart-title">Salary Hike % Required Year-on-Year</div><div class="chart-wrap"><canvas id="hikeBarChart"></canvas></div></div>
+      <div class="chart-card"><div class="chart-title">Cumulative Investment vs Goal Corpus</div><div class="chart-wrap"><canvas id="growthLineChart"></canvas></div></div>
+    </div>
+    <div class="section-header"><div class="section-title"><span class="dot"></span> Year-by-Year Schedule</div></div>
+    <div class="table-card">
+      <div class="table-card-header"><span class="table-card-title">SIP · Salary · Hike · Withdrawals</span><span class="table-note" id="sipGrowthNote"></span></div>
+      <div class="table-overflow"><table id="yearlyTable"><thead></thead><tbody></tbody></table></div>
+    </div>
+    <div class="section-header"><div class="section-title"><span class="dot"></span> Per-Goal SIP Schedule</div></div>
+    <div class="table-card">
+      <div class="table-card-header"><span class="table-card-title">Inflation-Adjusted Target & Monthly SIP per Goal per Year</span></div>
+      <div class="table-overflow"><table id="goalTable"><thead></thead><tbody></tbody></table></div>
+    </div>
+  </div>
+</div>
+<footer>SIP Planner Dashboard · Estimates for planning purposes only · Not financial advice</footer>
+
+<script>
+// ==============================================================
+// THEME
+// ==============================================================
+function toggleTheme(){
+  var h=document.documentElement,dark=h.getAttribute('data-theme')==='light';
+  h.setAttribute('data-theme',dark?'dark':'light');
+  document.getElementById('themeIcon').textContent=dark?'☀️':'🌙';
+  document.getElementById('themeLabel').textContent=dark?'Light':'Dark';
+  if(document.getElementById('resultsSection').classList.contains('visible'))calculate();
+}
+
+// ==============================================================
+// STATE
+// ==============================================================
+var goalCounter=0,wdCounters={};
+var COLORS=['#2ea043','#388bfd','#f78166','#e3b341','#a78bfa','#f472b6','#34d399','#fb923c','#60a5fa','#e879f9'];
+var charts={},_exp=null;
+
+// ==============================================================
+// HINTS
+// ==============================================================
+function updateHints(){
+  var pct=parseFloat(document.getElementById('salaryPct').value)||30;
+  var sal=parseFloat(document.getElementById('currentSalary').value)||0;
+  var sym=document.getElementById('currencySymbol').value||'₹';
+  var g=parseFloat(document.getElementById('sipGrowthRate').value)||10;
+  document.getElementById('salaryHint').textContent=sal>0?pct+'% → invest '+fmt(sal*pct/100,sym)+'/mo':pct+'% of salary → invested monthly';
+  document.getElementById('sipHint').textContent='SIP grows '+g+'% every year (step-up)';
+}
+
+// ==============================================================
+// GOAL CARD BUILDER
+// ==============================================================
+function updateGoalCount(){
+  var n=document.querySelectorAll('.goal-card').length;
+  document.getElementById('goalCountBadge').textContent=n+' goal'+(n!==1?'s':'');
+}
+
+function toggleGoalEnabled(id){
+  var card=document.getElementById('goal-'+id);
+  var chk=document.getElementById('gtoggle-'+id);
+  card.classList.toggle('disabled',!chk.checked);
+}
+
+function toggleOptSection(secId,chkId){
+  var fields=document.getElementById(secId);
+  var chk=document.getElementById(chkId);
+  if(chk.checked){fields.classList.remove('hidden');}
+  else{fields.classList.add('hidden');}
+}
+
+// Withdrawal counter per goal
+function addWithdrawal(goalId){
+  if(!wdCounters[goalId]) wdCounters[goalId]=0;
+  wdCounters[goalId]++;
+  var wid=wdCounters[goalId];
+  var list=document.getElementById('wd-list-'+goalId);
+  var item=document.createElement('div');
+  item.className='wd-item';
+  item.id='wd-'+goalId+'-'+wid;
+  item.innerHTML=
+    '<div class="wd-item-header">'+
+      '<span class="wd-item-label">💸 Withdrawal #'+wid+'</span>'+
+      '<button class="wd-remove-btn" onclick="removeWithdrawal('+goalId+','+wid+')">✕ Remove</button>'+
+    '</div>'+
+    '<div class="wd-item-fields">'+
+      '<div class="field-group"><div class="wd-field-label">Withdrawal Amount (Today\'s Value)</div>'+
+        '<input class="wd-input" type="number" data-wd-field="amount" placeholder="e.g. 500000"></div>'+
+      '<div class="field-group"><div class="wd-field-label">At End of Year</div>'+
+        '<input class="wd-input" type="number" data-wd-field="year" placeholder="e.g. 5" min="1"></div>'+
+      '<div class="field-group"><div class="wd-field-label">Inflation Rate % (for this withdrawal)</div>'+
+        '<input class="wd-input" type="number" data-wd-field="inflation" placeholder="e.g. 6"></div>'+
+      '<div class="field-group"><div class="wd-field-label">Note / Purpose (optional)</div>'+
+        '<input class="wd-input" type="text" data-wd-field="note" placeholder="e.g. Partial use"></div>'+
+    '</div>';
+  list.appendChild(item);
+}
+
+function removeWithdrawal(goalId,wid){
+  var el=document.getElementById('wd-'+goalId+'-'+wid);
+  if(el) el.remove();
+}
+
+function addGoal(p){
+  goalCounter++;
+  var id=goalCounter;
+  wdCounters[id]=0;
+  var color=COLORS[(id-1)%COLORS.length];
+  var es=document.getElementById('emptyState');
+  if(es) es.remove();
+  p=p||{};
+  var card=document.createElement('div');
+  card.className='goal-card';
+  card.id='goal-'+id;
+  card.dataset.id=id;
+  card.style.borderLeft='3px solid '+color;
+  card.innerHTML=
+    '<div class="goal-card-header">'+
+      '<div class="goal-card-left">'+
+        '<span class="goal-number">Goal '+String(id).padStart(2,'0')+'</span>'+
+      '</div>'+
+      '<div class="goal-card-right goal-toggle-area">'+
+        '<label class="toggle-wrap" title="Enable/disable this goal">'+
+          '<span class="toggle-label" style="font-size:11px">Active</span>'+
+          '<span class="toggle-sw">'+
+            '<input type="checkbox" id="gtoggle-'+id+'" checked onchange="toggleGoalEnabled('+id+')">'+
+            '<span class="toggle-track"></span><span class="toggle-thumb"></span>'+
+          '</span>'+
+        '</label>'+
+        '<button class="remove-btn" onclick="removeGoal('+id+')" title="Remove">✕</button>'+
+      '</div>'+
+    '</div>'+
+    '<input class="goal-name-input" placeholder="Goal name (e.g. Retirement, Home, Education…)" value="'+(p.name||'')+'">'+
+    '<div class="goal-fields">'+
+      '<div class="field-group"><div class="field-label">Target Amount (Today\'s Value)</div>'+
+        '<input class="field-input" type="number" data-field="target" placeholder="e.g. 5000000" value="'+(p.target||'')+'"></div>'+
+      '<div class="field-group"><div class="field-label">Time Frame (Years)</div>'+
+        '<input class="field-input" type="number" data-field="years" placeholder="e.g. 20" min="1" value="'+(p.years||'')+'"></div>'+
+      '<div class="field-group"><div class="field-label">Expected XIRR / Return % p.a.</div>'+
+        '<input class="field-input" type="number" data-field="xirr" placeholder="e.g. 12" value="'+(p.xirr||'')+'"></div>'+
+      '<div class="field-group"><div class="field-label">Annual Inflation Rate %</div>'+
+        '<input class="field-input" type="number" data-field="inflation" placeholder="e.g. 6" value="'+(p.inflation||'')+'"></div>'+
+    '</div>'+
+    // LUMP SUM
+    '<div class="opt-section">'+
+      '<div class="opt-section-header">'+
+        '<span class="opt-section-title">💰 Lump Sum Investment</span>'+
+        '<label class="toggle-wrap">'+
+          '<span class="toggle-label" style="font-size:10px;color:var(--text3)">Enable</span>'+
+          '<span class="toggle-sw">'+
+            '<input type="checkbox" id="lump-toggle-'+id+'" onchange="toggleOptSection(\'lump-fields-'+id+'\',\'lump-toggle-'+id+'\')">'+
+            '<span class="toggle-track"></span><span class="toggle-thumb"></span>'+
+          '</span>'+
+        '</label>'+
+      '</div>'+
+      '<div class="opt-fields hidden" id="lump-fields-'+id+'">'+
+        '<div class="field-group"><div class="field-label">Lump Sum Amount (Today\'s Value)</div>'+
+          '<input class="field-input" type="number" data-field="lumpsum" placeholder="e.g. 500000"></div>'+
+        '<div class="field-group"><div class="field-label">Lump Sum Return % p.a.</div>'+
+          '<input class="field-input" type="number" data-field="lumpret" placeholder="e.g. 10"></div>'+
+        '<div class="opt-note">FV of lump sum is deducted from inflation-adj. target → reduces SIP needed.</div>'+
+      '</div>'+
+    '</div>'+
+    // WITHDRAWALS
+    '<div class="opt-section">'+
+      '<div class="opt-section-header">'+
+        '<span class="opt-section-title">💸 Partial Withdrawals</span>'+
+        '<label class="toggle-wrap">'+
+          '<span class="toggle-label" style="font-size:10px;color:var(--text3)">Enable</span>'+
+          '<span class="toggle-sw">'+
+            '<input type="checkbox" id="wd-toggle-'+id+'" onchange="toggleOptSection(\'wd-section-'+id+'\',\'wd-toggle-'+id+'\')">'+
+            '<span class="toggle-track"></span><span class="toggle-thumb"></span>'+
+          '</span>'+
+        '</label>'+
+      '</div>'+
+      '<div class="opt-fields hidden" id="wd-section-'+id+'">'+
+        '<div class="opt-note" style="margin-top:2px">Each withdrawal inflates to its future value by the specified year, then is added back to the required corpus — increasing SIP accordingly.</div>'+
+        '<div class="wd-list" id="wd-list-'+id+'"></div>'+
+        '<button class="wd-add-btn" onclick="addWithdrawal('+id+')">'+
+          '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add Withdrawal'+
+        '</button>'+
+      '</div>'+
+    '</div>';
+  document.getElementById('goalsContainer').appendChild(card);
+  updateGoalCount();
+}
+
+function removeGoal(id){
+  var el=document.getElementById('goal-'+id);
+  if(el) el.remove();
+  if(!document.querySelectorAll('.goal-card').length){
+    var e=document.createElement('div');
+    e.className='empty-notice';e.id='emptyState';
+    e.innerHTML='<div class="icon">🎯</div>No goals yet. Add your first financial goal below.';
+    document.getElementById('goalsContainer').appendChild(e);
+  }
+  updateGoalCount();
+}
+
+function resetAll(){
+  document.querySelectorAll('.goal-card').forEach(function(c){c.remove();});
+  var e=document.createElement('div');
+  e.className='empty-notice';e.id='emptyState';
+  e.innerHTML='<div class="icon">🎯</div>No goals yet. Add your first financial goal below.';
+  document.getElementById('goalsContainer').appendChild(e);
+  document.getElementById('resultsSection').classList.remove('visible');
+  goalCounter=0;wdCounters={};_exp=null;
+  updateGoalCount();
+}
+
+function getGoals(){
+  return Array.from(document.querySelectorAll('.goal-card')).map(function(card,idx){
+    // Extract id from card.id string ("goal-N") — never rely on dataset.id
+    var id = parseInt(card.id.replace('goal-',''));
+
+    // Read toggles by finding checkbox inputs within known child containers
+    // Use querySelector scoped to the card — works regardless of id correctness
+    var goalToggle  = card.querySelector('input[id^="gtoggle-"]');
+    var lumpToggle  = card.querySelector('input[id^="lump-toggle-"]');
+    var wdToggle    = card.querySelector('input[id^="wd-toggle-"]');
+
+    var enabled = goalToggle ? goalToggle.checked : true;
+    var lumpOn  = lumpToggle ? lumpToggle.checked : false;
+    var wdOn    = wdToggle   ? wdToggle.checked   : false;
+
+    // Always read withdrawals from .wd-item elements — gate on wdOn
+    var withdrawals = [];
+    if(wdOn){
+      card.querySelectorAll('.wd-item').forEach(function(item){
+        var amt  = parseFloat(item.querySelector('[data-wd-field="amount"]').value) || 0;
+        var yr   = parseInt(item.querySelector('[data-wd-field="year"]').value)    || 0;
+        var inf  = (parseFloat(item.querySelector('[data-wd-field="inflation"]').value) || 0) / 100;
+        var note = item.querySelector('[data-wd-field="note"]').value || '';
+        if(amt > 0 && yr > 0) withdrawals.push({amount:amt, year:yr, inflation:inf, note:note});
+      });
+    }
+
+    return {
+      id:       id,
+      name:     card.querySelector('.goal-name-input').value.trim() || ('Goal '+(idx+1)),
+      enabled:  enabled,
+      target:   parseFloat(card.querySelector('[data-field="target"]').value)    || 0,
+      years:    parseFloat(card.querySelector('[data-field="years"]').value)     || 0,
+      xirr:    (parseFloat(card.querySelector('[data-field="xirr"]').value)     || 0) / 100,
+      inflation:(parseFloat(card.querySelector('[data-field="inflation"]').value)|| 0) / 100,
+      lumpOn:   lumpOn,
+      lumpsum:  lumpOn ? (parseFloat(card.querySelector('[data-field="lumpsum"]').value) || 0) : 0,
+      lumpret:  lumpOn ? ((parseFloat(card.querySelector('[data-field="lumpret"]').value) || 0) / 100) : 0,
+      withdrawals: withdrawals,
+      color: COLORS[idx % COLORS.length]
+    };
+  });
+}
+
+// ==============================================================
+// MATHS
+// ==============================================================
+function calcSIP(fv,months,annualRate,annualStepUp){
+  if(months<=0||fv<=0)return 0;
+  var r=annualRate/12,g=annualStepUp/12;
+  if(Math.abs(r-g)<1e-10)return fv/(months*Math.pow(1+r,months));
+  return(fv*(r-g))/(Math.pow(1+r,months)-Math.pow(1+g,months));
+}
+
+function fmt(val,sym){
+  if(isNaN(val)||val===undefined)return sym+'0';
+  if(val>=1e7)return sym+(val/1e7).toFixed(2)+' Cr';
+  if(val>=1e5)return sym+(val/1e5).toFixed(2)+' L';
+  return sym+Math.round(val).toLocaleString('en-IN');
+}
+
+function destroyChart(k){if(charts[k]){charts[k].destroy();delete charts[k];}}
+
+// ==============================================================
+// CALCULATE
+// ==============================================================
+function calculate(){
+  var allGoals=getGoals();
+  var goals=allGoals.filter(function(g){return g.enabled;});
+  if(!goals.length){alert('Please add and enable at least one goal.');return;}
+  for(var i=0;i<goals.length;i++){
+    if(!goals[i].target||!goals[i].years){alert('Fill in Target and Years for "'+goals[i].name+'".');return;}
+  }
+  var sym=document.getElementById('currencySymbol').value||'₹';
+  var salaryPct=Math.max(parseFloat(document.getElementById('salaryPct').value)||30,1)/100;
+  var sipGrow=Math.max(parseFloat(document.getElementById('sipGrowthRate').value)||10,0)/100;
+  var curSal=parseFloat(document.getElementById('currentSalary').value)||0;
+  var maxYears=Math.max.apply(null,goals.map(function(g){return g.years;}));
+
+  // Per-goal computation
+  var goalData=goals.map(function(g){
+    var inflatedTarget=g.target*Math.pow(1+g.inflation,g.years);
+    // Lump sum FV
+    var lumpFV=g.lumpOn&&g.lumpsum>0?g.lumpsum*Math.pow(1+g.lumpret,g.years):0;
+    // Withdrawal FVs — each withdrawal inflates to its year then to end-of-goal
+    // The money is taken out mid-way, so we need to additionally accumulate the
+    // corpus to replace it. Net effect: add back the FV of each withdrawal at goal end.
+    var totalWdFV=0;
+    var wdDetails=[];
+    g.withdrawals.forEach(function(w){
+      if(w.year>0&&w.year<=g.years){
+        // FV of withdrawal amount at its withdrawal year (today's money inflated)
+        var wdFVatYear=w.amount*Math.pow(1+w.inflation,w.year);
+        // That money if left invested would have grown until goal end
+        var remainingYears=g.years-w.year;
+        var wdFVatGoal=wdFVatYear*Math.pow(1+g.xirr,remainingYears);
+        totalWdFV+=wdFVatGoal;
+        wdDetails.push({year:w.year,amount:w.amount,inflation:w.inflation,note:w.note,
+          wdFVatYear:wdFVatYear,wdFVatGoal:wdFVatGoal});
+      }
+    });
+    // Adjusted corpus = inflation-adj. target + withdrawal opportunity cost - lump FV
+    var sipTarget=Math.max(inflatedTarget+totalWdFV-lumpFV,0);
+    var months=g.years*12;
+    var baseSIP=calcSIP(sipTarget,months,g.xirr,sipGrow);
+    var sipByYear=[];
+    for(var y=1;y<=g.years;y++) sipByYear.push(baseSIP*Math.pow(1+sipGrow,y-1));
+    return Object.assign({},g,{inflatedTarget:inflatedTarget,lumpFV:lumpFV,
+      totalWdFV:totalWdFV,wdDetails:wdDetails,sipTarget:sipTarget,baseSIP:baseSIP,sipByYear:sipByYear});
+  });
+
+  // Year-by-year aggregation — use IIFE to capture loop index correctly
+  var yearlyData=[];
+  for(var _y=1;_y<=maxYears;_y++){
+    (function(yr){
+      var totalSIP=0,breakdown={},wdThisYear=[];
+      goalData.forEach(function(gd){
+        if(yr<=gd.years){
+          totalSIP+=gd.sipByYear[yr-1];
+          breakdown[gd.name]=gd.sipByYear[yr-1];
+        }
+        gd.wdDetails.forEach(function(w){
+          if(w.year===yr){
+            wdThisYear.push({goal:gd.name,color:gd.color,amount:w.amount,fv:w.wdFVatYear,note:w.note});
+          }
+        });
+      });
+      var reqMon=totalSIP/salaryPct,reqAnn=reqMon*12;
+      var totalWdAmt=wdThisYear.reduce(function(s,w){return s+w.fv;},0);
+      yearlyData.push({year:yr,totalSIP:totalSIP,reqMon:reqMon,reqAnn:reqAnn,
+        breakdown:breakdown,wdThisYear:wdThisYear,totalWdAmt:totalWdAmt});
+    })(_y);
+  }
+  // Hike
+  for(var i=0;i<yearlyData.length;i++){
+    if(i===0){yearlyData[i].hikeAmt=0;yearlyData[i].hikePct=null;}
+    else{
+      var diff=yearlyData[i].reqAnn-yearlyData[i-1].reqAnn;
+      yearlyData[i].hikeAmt=diff;
+      yearlyData[i].hikePct=yearlyData[i-1].reqAnn>0?(diff/yearlyData[i-1].reqAnn)*100:0;
+    }
+  }
+
+  document.getElementById('resultsSection').classList.add('visible');
+
+  var totalBaseSIP=goalData.reduce(function(s,g){return s+g.baseSIP;},0);
+  var totalGoalValue=goalData.reduce(function(s,g){return s+g.inflatedTarget;},0);
+  var totalLumpFV=goalData.reduce(function(s,g){return s+g.lumpFV;},0);
+  var totalWdFV=goalData.reduce(function(s,g){return s+g.totalWdFV;},0);
+  var totalInvestment=yearlyData.reduce(function(s,y){return s+y.totalSIP*12;},0);
+  var totalWdOutflow=yearlyData.reduce(function(s,y){return s+y.totalWdAmt;},0);
+  var finalSalary=yearlyData[yearlyData.length-1].reqAnn;
+  var avgHike=yearlyData.slice(1).reduce(function(s,y){return s+(y.hikePct||0);},0)/Math.max(yearlyData.length-1,1);
+
+  _exp={sym:sym,salaryPct:salaryPct,sipGrow:sipGrow,goalData:goalData,yearlyData:yearlyData,
+    totalGoalValue:totalGoalValue,totalLumpFV:totalLumpFV,totalWdFV:totalWdFV,
+    totalInvestment:totalInvestment,totalWdOutflow:totalWdOutflow,
+    totalBaseSIP:totalBaseSIP,finalSalary:finalSalary,avgHike:avgHike,maxYears:maxYears};
+
+  // FEASIBILITY
+  var banner=document.getElementById('feasibilityBanner');
+  if(curSal>0){
+    var canInvest=curSal*salaryPct,ratio=totalBaseSIP/canInvest;
+    banner.style.display='flex';
+    if(ratio<=0.85){banner.className='feasibility-banner ok';document.getElementById('bannerIcon').textContent='✅';
+      document.getElementById('bannerTitle').textContent='Your plan looks feasible';
+      document.getElementById('bannerDesc').textContent='You can invest '+fmt(canInvest,sym)+'/mo ('+( salaryPct*100).toFixed(0)+'% of '+fmt(curSal,sym)+'). Year-1 SIP is '+fmt(totalBaseSIP,sym)+'/mo — '+(ratio*100).toFixed(0)+'% of your investable surplus.';}
+    else if(ratio<=1.1){banner.className='feasibility-banner warn';document.getElementById('bannerIcon').textContent='⚠️';
+      document.getElementById('bannerTitle').textContent='Tight but possible';
+      document.getElementById('bannerDesc').textContent='Year-1 SIP of '+fmt(totalBaseSIP,sym)+'/mo is '+(ratio*100).toFixed(0)+'% of your investable '+fmt(canInvest,sym)+'/mo.';}
+    else{banner.className='feasibility-banner alert';document.getElementById('bannerIcon').textContent='🚨';
+      document.getElementById('bannerTitle').textContent='SIP exceeds investable salary';
+      document.getElementById('bannerDesc').textContent='Need at least '+fmt(yearlyData[0].reqMon,sym)+'/mo salary to execute this plan.';}
+  } else { banner.style.display='none'; }
+
+  // KPIs
+  document.getElementById('kpiGrid').innerHTML=
+    '<div class="kpi-card"><div class="kpi-label">Total Monthly SIP (Year 1)</div><div class="kpi-value accent">'+fmt(totalBaseSIP,sym)+'</div><div class="kpi-sub">'+goals.length+' active goal'+(goals.length>1?'s':'')+'</div></div>'+
+    '<div class="kpi-card"><div class="kpi-label">Inflation-Adj. Corpus</div><div class="kpi-value">'+fmt(totalGoalValue,sym)+'</div><div class="kpi-sub">total future-value target</div></div>'+
+    (totalLumpFV>0?'<div class="kpi-card"><div class="kpi-label">Lump Sum Contribution (FV)</div><div class="kpi-value blue">'+fmt(totalLumpFV,sym)+'</div><div class="kpi-sub">reduces SIP requirement</div></div>':'')+
+    (totalWdFV>0?'<div class="kpi-card"><div class="kpi-label">Total Withdrawal Impact (FV)</div><div class="kpi-value purple">'+fmt(totalWdFV,sym)+'</div><div class="kpi-sub">added to required corpus</div></div>':'')+
+    (totalWdOutflow>0?'<div class="kpi-card"><div class="kpi-label">Total Withdrawal Outflow</div><div class="kpi-value purple">'+fmt(totalWdOutflow,sym)+'</div><div class="kpi-sub">actual FV at withdrawal years</div></div>':'')+
+    '<div class="kpi-card"><div class="kpi-label">Required Salary — Year 1</div><div class="kpi-value blue">'+fmt(yearlyData[0].reqMon,sym)+'/mo</div><div class="kpi-sub">'+fmt(yearlyData[0].reqAnn,sym)+' p.a. · '+(salaryPct*100).toFixed(0)+'% alloc.</div></div>'+
+    '<div class="kpi-card"><div class="kpi-label">Required Salary — Final Year</div><div class="kpi-value blue">'+fmt(finalSalary/12,sym)+'/mo</div><div class="kpi-sub">Year '+maxYears+'</div></div>'+
+    '<div class="kpi-card"><div class="kpi-label">Avg. Salary Hike Needed</div><div class="kpi-value orange">'+avgHike.toFixed(1)+'%</div><div class="kpi-sub">per year to stay on plan</div></div>'+
+    '<div class="kpi-card"><div class="kpi-label">Total SIP Invested (Nominal)</div><div class="kpi-value">'+fmt(totalInvestment,sym)+'</div><div class="kpi-sub">step-up: '+(sipGrow*100).toFixed(1)+'% p.a.</div></div>';
+
+  // PER-GOAL CARDS
+  document.getElementById('goalResultsGrid').innerHTML=goalData.map(function(gd){
+    var pct=totalBaseSIP>0?(gd.baseSIP/totalBaseSIP*100).toFixed(0):0;
+    var lumpRow=gd.lumpOn&&gd.lumpsum>0?
+      '<div class="goal-result-row"><span class="grk">Lump Sum (Today)</span><span class="grv lump">'+fmt(gd.lumpsum,sym)+'</span></div>'+
+      '<div class="goal-result-row"><span class="grk">Lump Sum FV</span><span class="grv lump">'+fmt(gd.lumpFV,sym)+'</span></div>':'';
+    var wdRows=gd.wdDetails.map(function(w){
+      return '<div class="goal-result-row"><span class="grk">↳ Wd Yr'+w.year+(w.note?' ('+w.note+')':'')+'</span><span class="grv wd">'+fmt(w.wdFVatYear,sym)+'</span></div>';
+    }).join('');
+    var wdSummary=gd.totalWdFV>0?
+      '<div class="goal-result-row"><span class="grk">Withdrawal FV Impact</span><span class="grv wd">+'+fmt(gd.totalWdFV,sym)+'</span></div>'+wdRows:'';
+    return '<div class="goal-result-card" style="border-left:3px solid '+gd.color+'">'+
+      '<div class="goal-result-name"><span class="goal-color-dot" style="background:'+gd.color+'"></span>'+gd.name+'</div>'+
+      '<div class="goal-result-row"><span class="grk">Today\'s Target</span><span class="grv">'+fmt(gd.target,sym)+'</span></div>'+
+      '<div class="goal-result-row"><span class="grk">Inflation-Adj. Corpus</span><span class="grv">'+fmt(gd.inflatedTarget,sym)+'</span></div>'+
+      lumpRow+wdSummary+
+      '<div class="goal-result-row"><span class="grk">Net SIP Target</span><span class="grv">'+fmt(gd.sipTarget,sym)+'</span></div>'+
+      '<div class="goal-result-row"><span class="grk">Expected XIRR</span><span class="grv">'+(gd.xirr*100).toFixed(1)+'% · '+(gd.inflation*100).toFixed(1)+'% inf.</span></div>'+
+      '<div class="goal-result-row"><span class="grk">Year-1 SIP Needed</span><span class="grv hl">'+fmt(gd.baseSIP,sym)+'/mo</span></div>'+
+      '<div class="goal-result-row"><span class="grk">Final Year SIP</span><span class="grv">'+fmt(gd.sipByYear[gd.sipByYear.length-1],sym)+'/mo</span></div>'+
+      '<div class="goal-progress-wrap">'+
+        '<div class="goal-progress-label"><span>Share of total SIP</span><span>'+pct+'%</span></div>'+
+        '<div class="goal-progress-bar-bg"><div class="goal-progress-bar-fill" style="width:'+pct+'%;background:'+gd.color+'"></div></div>'+
+      '</div></div>';
+  }).join('');
+
+  // CHARTS
+  var isDark=document.documentElement.getAttribute('data-theme')==='dark';
+  var gc=isDark?'#21262d':'#eaeef2',tc=isDark?'#484f58':'#9198a1';
+  var tbg=isDark?'#1c2128':'#fff',tbr=isDark?'#30363d':'#d0d7de',lc=isDark?'#8b949e':'#636c76';
+  var labs=yearlyData.map(function(y){return 'Yr '+y.year;});
+
+  destroyChart('pie');
+  charts['pie']=new Chart(document.getElementById('sipPieChart'),{
+    type:'doughnut',
+    data:{labels:goalData.map(function(g){return g.name;}),
+      datasets:[{data:goalData.map(function(g){return g.baseSIP;}),backgroundColor:goalData.map(function(g){return g.color;}),borderColor:tbg,borderWidth:3,hoverOffset:6}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'60%',
+      plugins:{legend:{position:'bottom',labels:{color:lc,font:{family:'Inter',size:11},padding:10}},
+      tooltip:{callbacks:{label:function(ctx){return ' '+ctx.label+': '+fmt(ctx.raw,sym);}}}}}
+  });
+
+  destroyChart('salaryLine');
+  charts['salaryLine']=new Chart(document.getElementById('salaryLineChart'),{
+    type:'line',
+    data:{labels:labs,datasets:[
+      {label:'Annual Salary Required',data:yearlyData.map(function(y){return y.reqAnn;}),borderColor:'#388bfd',backgroundColor:'rgba(56,139,253,.08)',fill:true,tension:.4,pointRadius:3,pointBackgroundColor:'#388bfd'},
+      {label:'Annual SIP (×12)',data:yearlyData.map(function(y){return y.totalSIP*12;}),borderColor:'#2ea043',backgroundColor:'rgba(46,160,67,.06)',fill:true,tension:.4,pointRadius:3,pointBackgroundColor:'#2ea043',borderDash:[4,3]}
+    ]},
+    options:copts(sym,gc,tc,tbg,tbr,lc)
+  });
+
+  var hikes=yearlyData.map(function(y){return y.hikePct===null?0:y.hikePct;});
+  destroyChart('hikeBar');
+  charts['hikeBar']=new Chart(document.getElementById('hikeBarChart'),{
+    type:'bar',
+    data:{labels:labs.slice(1),datasets:[{label:'Salary Hike %',data:hikes.slice(1),
+      backgroundColor:hikes.slice(1).map(function(h){return h>=0?'rgba(46,160,67,.55)':'rgba(248,81,73,.55)';}),
+      borderColor:hikes.slice(1).map(function(h){return h>=0?'#2ea043':'#f85149';}),borderWidth:1,borderRadius:3}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){return ' '+ctx.raw.toFixed(2)+'%';}}}},
+      scales:{x:{grid:{color:gc},ticks:{color:tc,font:{family:'JetBrains Mono',size:9}}},
+              y:{grid:{color:gc},ticks:{color:tc,font:{family:'JetBrains Mono',size:9},callback:function(v){return v.toFixed(1)+'%';}}}}}
+  });
+
+  destroyChart('growth');
+  var cum=0,cumData=yearlyData.map(function(y){cum+=y.totalSIP*12;return cum;});
+  charts['growth']=new Chart(document.getElementById('growthLineChart'),{
+    type:'line',
+    data:{labels:labs,datasets:[
+      {label:'Cumulative SIP Invested',data:cumData,borderColor:'#f78166',backgroundColor:'rgba(247,129,102,.07)',fill:true,tension:.4,pointRadius:3,pointBackgroundColor:'#f78166'},
+      {label:'Total Goal Corpus',data:yearlyData.map(function(){return totalGoalValue;}),borderColor:'#e3b341',borderDash:[6,3],fill:false,pointRadius:0,tension:0},
+      (totalWdOutflow>0?{label:'Cumulative Withdrawals',data:(function(){var s=0;return yearlyData.map(function(y){s+=y.totalWdAmt;return s;});}()),borderColor:'#a78bfa',borderDash:[3,3],fill:false,pointRadius:2,tension:.3}:null)
+    ].filter(Boolean)},
+    options:copts(sym,gc,tc,tbg,tbr,lc)
+  });
+
+  document.getElementById('sipGrowthNote').textContent='SIP step-up: '+(sipGrow*100).toFixed(1)+'% p.a. · Allocation: '+(salaryPct*100).toFixed(0)+'%';
+
+  // ── TABLE 1 : Year-by-Year Schedule ──────────────────────────────────
+  // Columns: Year | [Goal SIP/mo | Goal Annual SIP] x N |
+  //          Total SIP/mo | Total Annual SIP | Monthly Salary | Annual Salary |
+  //          Hike Amt | Hike % | Withdrawal(s) this year
+  var goalNames=goalData.map(function(g){return g.name;});
+  var th=document.querySelector('#yearlyTable thead');
+  var tb=document.querySelector('#yearlyTable tbody');
+
+  // Two header rows: row1 spans goal pairs; row2 has sub-cols
+  var hRow1='<tr><th rowspan="2">Year</th>';
+  goalData.forEach(function(g){
+    hRow1+='<th colspan="2" style="color:'+g.color+';border-bottom:none">'+g.name+'</th>';
+  });
+  hRow1+='<th rowspan="2">Total SIP/mo</th>'+
+         '<th rowspan="2">Annual SIP Total</th>'+
+         '<th rowspan="2">Monthly Salary</th>'+
+         '<th rowspan="2">Annual Salary</th>'+
+         '<th rowspan="2">Hike Amt</th>'+
+         '<th rowspan="2">Hike %</th>'+
+         '<th rowspan="2">Withdrawals</th></tr>';
+
+  var hRow2='<tr>';
+  goalData.forEach(function(){
+    hRow2+='<th>SIP/mo</th><th>Annual SIP</th>';
+  });
+  hRow2+='</tr>';
+  th.innerHTML=hRow1+hRow2;
+
+  var tbRows='';
+  yearlyData.forEach(function(y){
+    var hA=y.hikePct===null
+      ?'<span class="hike-badge base">—</span>'
+      :'<span class="hike-badge '+(y.hikeAmt>=0?'up':'down')+'">'+(y.hikeAmt>=0?'▲':'▼')+' '+fmt(Math.abs(y.hikeAmt),sym)+'</span>';
+    var hP=y.hikePct===null
+      ?'<span class="hike-badge base">Base</span>'
+      :'<span class="hike-badge '+(y.hikePct>=0?'up':'down')+'">'+(y.hikePct>=0?'▲':'▼')+' '+Math.abs(y.hikePct).toFixed(2)+'%</span>';
+
+    // Build withdrawal cell — each entry on its own line with amount + note
+    var wdParts=y.wdThisYear.map(function(w){
+      var label=(w.note?w.note+' ':'')+w.goal;
+      return '<span class="wd-badge" title="'+label+'">'+
+        '💸 '+label+': '+fmt(w.fv,sym)+'</span>';
+    });
+    var wdCell=wdParts.length?'<div style="display:flex;flex-direction:column;gap:3px;align-items:flex-start">'+wdParts.join('')+'</div>':'—';
+
+    // Data row
+    tbRows+='<tr>';
+    tbRows+='<td>Year '+y.year+'</td>';
+    goalData.forEach(function(gd){
+      var sipMo=y.breakdown[gd.name]||0;
+      var sipAnn=sipMo*12;
+      if(sipMo>0){
+        tbRows+='<td style="color:'+gd.color+'">'+fmt(sipMo,sym)+'</td>'+
+                '<td style="color:'+gd.color+'">'+fmt(sipAnn,sym)+'</td>';
+      } else {
+        tbRows+='<td style="color:var(--text3);font-style:italic">—</td>'+
+                '<td style="color:var(--text3)">—</td>';
+      }
+    });
+    tbRows+='<td style="color:var(--accent);font-weight:600">'+fmt(y.totalSIP,sym)+'</td>';
+    tbRows+='<td style="color:var(--accent);font-weight:600">'+fmt(y.totalSIP*12,sym)+'</td>';
+    tbRows+='<td>'+fmt(y.reqMon,sym)+'</td>';
+    tbRows+='<td>'+fmt(y.reqAnn,sym)+'</td>';
+    tbRows+='<td>'+hA+'</td>';
+    tbRows+='<td>'+hP+'</td>';
+    tbRows+='<td style="text-align:left;min-width:160px">'+wdCell+'</td>';
+    tbRows+='</tr>';
+
+    // Dedicated withdrawal detail row (highlighted, full width)
+    if(y.wdThisYear.length){
+      var totalCols=goalData.length*2+8; // year + 2 per goal + 6 summary cols + wd col
+      tbRows+='<tr class="wd-row">'+
+        '<td colspan="'+totalCols+'" style="text-align:left;padding:6px 16px;font-size:11px;border-left:3px solid var(--wd)">'+
+        '<strong style="color:var(--wd)">💸 Withdrawal Event — Year '+y.year+'</strong>&nbsp;&nbsp;'+
+        y.wdThisYear.map(function(w){
+          return '<span style="margin-right:16px"><strong>'+w.goal+'</strong>'+(w.note?' ('+w.note+')':'')+
+            ' → FV at withdrawal: <strong>'+fmt(w.fv,sym)+'</strong></span>';
+        }).join('')+
+        '<span style="float:right;color:var(--wd);font-family:\'JetBrains Mono\',monospace">Total outflow this year: '+fmt(y.totalWdAmt,sym)+'</span>'+
+        '</td></tr>';
+    }
+  });
+
+  // Totals row
+  var totalCols=goalData.length*2+8;
+  tbRows+='<tr class="total-row"><td>Total / Final</td>';
+  goalData.forEach(function(gd){
+    var lastSipMo=0;
+    for(var i=yearlyData.length-1;i>=0;i--){
+      if(yearlyData[i].breakdown[gd.name]){lastSipMo=yearlyData[i].breakdown[gd.name];break;}
+    }
+    tbRows+='<td>'+fmt(lastSipMo,sym)+'/mo</td><td>'+fmt(lastSipMo*12,sym)+'/yr</td>';
+  });
+  tbRows+='<td>'+fmt(yearlyData[yearlyData.length-1].totalSIP,sym)+'/mo</td>';
+  tbRows+='<td>'+fmt(yearlyData[yearlyData.length-1].totalSIP*12,sym)+'/yr</td>';
+  tbRows+='<td>'+fmt(yearlyData[yearlyData.length-1].reqMon,sym)+'/mo</td>';
+  tbRows+='<td>'+fmt(finalSalary,sym)+' p.a.</td>';
+  tbRows+='<td colspan="2">Total Invested: '+fmt(totalInvestment,sym)+'</td>';
+  tbRows+='<td style="text-align:left">Total Outflow: '+fmt(totalWdOutflow,sym)+'</td></tr>';
+  tb.innerHTML=tbRows;
+
+  // ── TABLE 2 : Per-Goal SIP Schedule ──────────────────────────────────
+  // Columns: Year | [Infl-Adj Target | SIP/mo | Annual SIP | Withdrawal?] x goal
+  var gth=document.querySelector('#goalTable thead');
+  var gtb=document.querySelector('#goalTable tbody');
+
+  var gh1='<tr><th rowspan="2">Year</th>';
+  goalData.forEach(function(g){
+    gh1+='<th colspan="4" style="color:'+g.color+';border-bottom:none">'+g.name+'</th>';
+  });
+  gh1+='</tr>';
+  var gh2='<tr>';
+  goalData.forEach(function(){
+    gh2+='<th>Infl-Adj Target</th><th>SIP/mo</th><th>Annual SIP</th><th>Withdrawal</th>';
+  });
+  gh2+='</tr>';
+  gth.innerHTML=gh1+gh2;
+
+  var gr='';
+  for(var yr=1;yr<=maxYears;yr++){
+    // collect withdrawals this year per goal
+    var wdByGoal={};
+    goalData.forEach(function(gd){
+      gd.wdDetails.forEach(function(w){
+        if(w.year===yr){
+          if(!wdByGoal[gd.name]) wdByGoal[gd.name]=[];
+          wdByGoal[gd.name].push(w);
+        }
+      });
+    });
+
+    gr+='<tr><td>Year '+yr+'</td>';
+    goalData.forEach(function(gd){
+      if(yr<=gd.years){
+        var adjTarget=gd.target*Math.pow(1+gd.inflation,yr);
+        var sipMo=gd.sipByYear[yr-1];
+        var sipAnn=sipMo*12;
+        var wds=wdByGoal[gd.name];
+        var wdCell2=wds&&wds.length
+          ?wds.map(function(w){return '<span class="wd-badge" title="'+(w.note||'')+'">'+fmt(w.wdFVatYear,sym)+'</span>';}).join('')
+          :'—';
+        gr+='<td>'+fmt(adjTarget,sym)+'</td>'+
+            '<td style="color:'+gd.color+';font-weight:600">'+fmt(sipMo,sym)+'</td>'+
+            '<td style="color:'+gd.color+';font-weight:500">'+fmt(sipAnn,sym)+'</td>'+
+            '<td style="text-align:left">'+wdCell2+'</td>';
+      } else {
+        gr+='<td style="color:var(--text3);font-style:italic">Completed</td>'+
+            '<td style="color:var(--text3)">—</td>'+
+            '<td style="color:var(--text3)">—</td>'+
+            '<td>—</td>';
+      }
+    });
+    gr+='</tr>';
+
+    // Full-width withdrawal highlight row (only when ≥1 withdrawal across any goal this year)
+    var anyWd=Object.keys(wdByGoal).length>0;
+    if(anyWd){
+      var totalGoalCols=goalData.length*4+1;
+      gr+='<tr class="wd-row">'+
+        '<td colspan="'+totalGoalCols+'" style="text-align:left;padding:6px 16px;font-size:11px;border-left:3px solid var(--wd)">'+
+        '<strong style="color:var(--wd)">💸 Year '+yr+' Withdrawals:</strong> '+
+        Object.keys(wdByGoal).map(function(gname){
+          return wdByGoal[gname].map(function(w){
+            return '<span style="margin-right:14px"><strong>'+gname+'</strong>'+(w.note?' ('+w.note+')':'')+
+              ' — Today\'s value: <strong>'+fmt(w.amount,sym)+'</strong>'+
+              ' → FV: <strong>'+fmt(w.wdFVatYear,sym)+'</strong>'+
+              ' | Corpus impact: <strong style="color:var(--wd)">'+fmt(w.wdFVatGoal,sym)+'</strong></span>';
+          }).join('');
+        }).join('')+
+        '</td></tr>';
+    }
+  }
+  gtb.innerHTML=gr;
+
+  document.getElementById('resultsSection').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+// ==============================================================
+// CHART OPTIONS
+// ==============================================================
+function copts(sym,gc,tc,tbg,tbr,lc){
+  return{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+    plugins:{legend:{labels:{color:lc,font:{family:'Inter',size:11},padding:10,boxWidth:10,usePointStyle:true,pointStyleWidth:8}},
+      tooltip:{backgroundColor:tbg,borderColor:tbr,borderWidth:1,titleColor:'#1f2328',bodyColor:'#636c76',
+        titleFont:{family:'Inter',size:12,weight:'600'},bodyFont:{family:'JetBrains Mono',size:11},padding:10,
+        callbacks:{label:function(ctx){var v=ctx.raw;
+          if(v>=1e7)return ' '+ctx.dataset.label+': '+sym+(v/1e7).toFixed(2)+' Cr';
+          if(v>=1e5)return ' '+ctx.dataset.label+': '+sym+(v/1e5).toFixed(2)+' L';
+          return ' '+ctx.dataset.label+': '+sym+Math.round(v).toLocaleString('en-IN');}}}},
+    scales:{
+      x:{grid:{color:gc},ticks:{color:tc,font:{family:'JetBrains Mono',size:9}}},
+      y:{grid:{color:gc},ticks:{color:tc,font:{family:'JetBrains Mono',size:9},callback:function(v){
+        if(v>=1e7)return sym+(v/1e7).toFixed(1)+'Cr';
+        if(v>=1e5)return sym+(v/1e5).toFixed(1)+'L';
+        if(v>=1e3)return sym+(v/1e3).toFixed(0)+'K';
+        return sym+v;}}}}};
+}
+
+// ==============================================================
+// EXCEL EXPORT  — pure JS XLSX (no external library)
+// ==============================================================
+function exportToExcel(){
+  if(!_exp){alert('Please run Calculate Plan first.');return;}
+  var D=_exp,sym=D.sym,r2=function(v){return Math.round(v*100)/100;};
+  var goalNames=D.goalData.map(function(g){return g.name;});
+
+  // Sheet 1: Summary
+  var s1=[
+    ['SIP Goal Planner — Summary Report'],
+    ['Generated',new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})],
+    [],
+    ['GLOBAL SETTINGS'],
+    ['Currency',sym],['Salary Allocation %',r2(D.salaryPct*100)],['SIP Step-Up % p.a.',r2(D.sipGrow*100)],
+    [],['KEY METRICS'],
+    ['Total Monthly SIP Year-1 ('+sym+')',r2(D.totalBaseSIP)],
+    ['Inflation-Adj. Corpus ('+sym+')',r2(D.totalGoalValue)],
+    ['Lump Sum FV Contribution ('+sym+')',r2(D.totalLumpFV)],
+    ['Withdrawal FV Impact ('+sym+')',r2(D.totalWdFV)],
+    ['Total SIP Invested Nominal ('+sym+')',r2(D.totalInvestment)],
+    ['Total Withdrawal Outflow ('+sym+')',r2(D.totalWdOutflow)],
+    ['Req. Monthly Salary Year-1 ('+sym+')',r2(D.yearlyData[0].reqMon)],
+    ['Req. Annual Salary Year-1 ('+sym+')',r2(D.yearlyData[0].reqAnn)],
+    ['Req. Monthly Salary Final Year ('+sym+')',r2(D.yearlyData[D.yearlyData.length-1].reqMon)],
+    ['Req. Annual Salary Final Year ('+sym+')',r2(D.finalSalary)],
+    ['Avg Salary Hike Needed %',r2(D.avgHike)],
+    [],['PER-GOAL BREAKDOWN'],
+    ['Goal','Target (Today)','Years','XIRR %','Inflation %','Infl-Adj Corpus','Lump Sum','Lump FV','Wd FV Impact','SIP Target','Year-1 SIP/mo','Final SIP/mo']
+  ];
+  D.goalData.forEach(function(g){
+    s1.push([g.name,r2(g.target),g.years,r2(g.xirr*100),r2(g.inflation*100),
+      r2(g.inflatedTarget),r2(g.lumpsum||0),r2(g.lumpFV||0),r2(g.totalWdFV||0),
+      r2(g.sipTarget),r2(g.baseSIP),r2(g.sipByYear[g.sipByYear.length-1])]);
+  });
+
+  // Sheet 2: Year-by-Year
+  var h2=['Year'];
+  D.goalData.forEach(function(g){h2.push(g.name+' SIP/mo',g.name+' Annual SIP');});
+  h2.push('Total SIP/mo','Total Annual SIP','Monthly Salary','Annual Salary','Hike Amount','Hike %','Withdrawal Detail');
+  var s2=[h2];
+  D.yearlyData.forEach(function(y){
+    var row=['Year '+y.year];
+    D.goalData.forEach(function(g){
+      var sipMo=y.breakdown[g.name]||0;
+      row.push(r2(sipMo),r2(sipMo*12));
+    });
+    row.push(r2(y.totalSIP),r2(y.totalSIP*12),r2(y.reqMon),r2(y.reqAnn),
+      y.hikePct===null?'':r2(y.hikeAmt),
+      y.hikePct===null?'Base':r2(y.hikePct),
+      y.wdThisYear.length?y.wdThisYear.map(function(w){
+        return (w.note||w.goal)+': FV='+r2(w.fv);
+      }).join('; '):'');
+    s2.push(row);
+    // If any withdrawal this year, add a detail row
+    if(y.wdThisYear.length){
+      y.wdThisYear.forEach(function(w){
+        var detailRow=['  ↳ WD: '+w.goal+(w.note?' ('+w.note+')':'')];
+        D.goalData.forEach(function(){detailRow.push('','');});
+        detailRow.push('','','','','','','Amount FV: '+r2(w.fv));
+        s2.push(detailRow);
+      });
+    }
+  });
+  var tot=['Total/Final'];
+  D.goalData.forEach(function(g){
+    var last=0;
+    for(var i=D.yearlyData.length-1;i>=0;i--){if(D.yearlyData[i].breakdown[g.name]){last=D.yearlyData[i].breakdown[g.name];break;}}
+    tot.push(r2(last),r2(last*12));
+  });
+  tot.push(r2(D.yearlyData[D.yearlyData.length-1].totalSIP),
+    r2(D.yearlyData[D.yearlyData.length-1].totalSIP*12),
+    r2(D.yearlyData[D.yearlyData.length-1].reqMon),r2(D.finalSalary),
+    '','','Total Outflow: '+r2(D.totalWdOutflow));
+  s2.push(tot);
+
+  // Sheet 3: Per-Goal Schedule (with Annual SIP + Withdrawal columns)
+  var h3=['Year'];
+  D.goalData.forEach(function(g){h3.push(g.name+' Infl-Adj Target',g.name+' SIP/mo',g.name+' Annual SIP',g.name+' Withdrawal FV');});
+  var s3=[h3];
+  for(var yr=1;yr<=D.maxYears;yr++){
+    var row3=['Year '+yr];
+    D.goalData.forEach(function(gd){
+      if(yr<=gd.years){
+        var adjTarget=gd.target*Math.pow(1+gd.inflation,yr);
+        var sipMo=gd.sipByYear[yr-1];
+        var wdThisYr=gd.wdDetails.filter(function(w){return w.year===yr;});
+        var wdStr=wdThisYr.length?wdThisYr.map(function(w){return r2(w.wdFVatYear);}).join('+'):'';
+        row3.push(r2(adjTarget),r2(sipMo),r2(sipMo*12),wdStr||'');
+      } else {row3.push('Done','—','—','');}
+    });
+    s3.push(row3);
+  }
+
+  // Sheet 4: Withdrawals Detail
+  var s4=[['Goal','Withdrawal Year','Amount Today ('+sym+')','Inflation %','FV at Wd Year ('+sym+')','FV at Goal End ('+sym+')','Note']];
+  D.goalData.forEach(function(g){
+    g.wdDetails.forEach(function(w){
+      s4.push([g.name,w.year,r2(w.amount),r2(w.inflation*100),r2(w.wdFVatYear),r2(w.wdFVatGoal),w.note||'']);
+    });
+  });
+  if(s4.length===1) s4.push(['No withdrawals defined','','','','','','']);
+
+  buildXLSX([
+    {name:'Summary',data:s1},
+    {name:'Year-by-Year Schedule',data:s2},
+    {name:'Per-Goal SIP Schedule',data:s3},
+    {name:'Withdrawals Detail',data:s4}
+  ],'SIP_Goal_Plan_'+new Date().toISOString().slice(0,10)+'.xlsx');
+}
+
+// ==============================================================
+// PURE JS XLSX BUILDER
+// Produces a valid Office Open XML .xlsx (ZIP + XML)
+// ==============================================================
+function buildXLSX(sheets,filename){
+  // --- string escaping ---
+  function xe(s){
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;').replace(/'/g,'&apos;');
+  }
+  // --- col index → letter(s) ---
+  function col(n){
+    var s='';n++;
+    while(n>0){n--;s=String.fromCharCode(65+(n%26))+s;n=Math.floor(n/26);}
+    return s;
+  }
+  // --- shared strings ---
+  var sstArr=[],sstMap={};
+  function si(s){
+    var k=String(s);
+    if(sstMap[k]===undefined){sstMap[k]=sstArr.length;sstArr.push(k);}
+    return sstMap[k];
+  }
+  // pre-scan all string cells
+  sheets.forEach(function(sh){
+    sh.data.forEach(function(row){
+      if(!row)return;
+      row.forEach(function(c){if(typeof c==='string'&&c!=='')si(c);});
+    });
+  });
+  // --- worksheet XML ---
+  function wsXML(data){
+    var x='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
+    x+='<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>';
+    data.forEach(function(row,ri){
+      if(!row||!row.length)return;
+      x+='<row r="'+(ri+1)+'">';
+      row.forEach(function(c,ci){
+        var addr=col(ci)+(ri+1);
+        if(c===null||c===undefined||c===''){x+='<c r="'+addr+'"/>';}
+        else if(typeof c==='number'){x+='<c r="'+addr+'" t="n"><v>'+c+'</v></c>';}
+        else{x+='<c r="'+addr+'" t="s"><v>'+si(String(c))+'</v></c>';}
+      });
+      x+='</row>';
+    });
+    x+='</sheetData></worksheet>';
+    return x;
+  }
+  // --- shared strings XML ---
+  function sstXML(){
+    var x='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
+    x+='<sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" count="'+sstArr.length+'" uniqueCount="'+sstArr.length+'">';
+    sstArr.forEach(function(s){x+='<si><t xml:space="preserve">'+xe(s)+'</t></si>';});
+    x+='</sst>';return x;
+  }
+  // --- workbook XML ---
+  function wbXML(){
+    var x='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
+    x+='<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>';
+    sheets.forEach(function(sh,i){x+='<sheet name="'+xe(sh.name)+'" sheetId="'+(i+1)+'" r:id="rId'+(i+1)+'"/>';});
+    x+='</sheets></workbook>';return x;
+  }
+  // --- workbook rels ---
+  function wbRels(){
+    var x='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
+    x+='<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">';
+    sheets.forEach(function(sh,i){
+      x+='<Relationship Id="rId'+(i+1)+'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet'+(i+1)+'.xml"/>';
+    });
+    x+='<Relationship Id="rId'+(sheets.length+1)+'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings" Target="sharedStrings.xml"/>';
+    x+='</Relationships>';return x;
+  }
+  // --- content types ---
+  function ctXML(){
+    var x='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
+    x+='<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">';
+    x+='<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>';
+    x+='<Default Extension="xml" ContentType="application/xml"/>';
+    x+='<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>';
+    sheets.forEach(function(sh,i){
+      x+='<Override PartName="/xl/worksheets/sheet'+(i+1)+'.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>';
+    });
+    x+='<Override PartName="/xl/sharedStrings.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml"/>';
+    x+='</Types>';return x;
+  }
+  var dotRels='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
+    '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+
+    '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>'+
+    '</Relationships>';
+
+  // =========================================================
+  // ZIP writer — fixed byte layout
+  // =========================================================
+  function strToBytes(str){
+    var buf=[],i=0;
+    for(;i<str.length;i++){
+      var c=str.charCodeAt(i);
+      if(c<0x80){buf.push(c);}
+      else if(c<0x800){buf.push(0xC0|(c>>6),0x80|(c&0x3F));}
+      else{buf.push(0xE0|(c>>12),0x80|((c>>6)&0x3F),0x80|(c&0x3F));}
+    }
+    return new Uint8Array(buf);
+  }
+
+  function crc32(data){
+    var tbl=crc32._t;
+    if(!tbl){
+      tbl=new Uint32Array(256);
+      for(var n=0;n<256;n++){
+        var c=n;
+        for(var k=0;k<8;k++) c=c&1?(0xEDB88320^(c>>>1)):(c>>>1);
+        tbl[n]=c;
+      }
+      crc32._t=tbl;
+    }
+    var crc=0xFFFFFFFF;
+    for(var i=0;i<data.length;i++) crc=tbl[(crc^data[i])&0xFF]^(crc>>>8);
+    return (crc^0xFFFFFFFF)>>>0;
+  }
+
+  // Write a 4-byte little-endian uint32 into a DataView
+  function w32(dv,off,val){dv.setUint32(off,val,true);}
+  function w16(dv,off,val){dv.setUint16(off,val,true);}
+
+  function makeEntry(name,content){
+    var nb=strToBytes(name);
+    var db=typeof content==='string'?strToBytes(content):content;
+    var crc=crc32(db);
+    // Local file header = 30 bytes + name
+    var lhSize=30+nb.length;
+    var lhBuf=new ArrayBuffer(lhSize);
+    var lh=new DataView(lhBuf);
+    lh.setUint32(0,0x04034B50,true);  // sig
+    w16(lh,4,20);    // version needed
+    w16(lh,6,0);     // flags
+    w16(lh,8,0);     // compression: stored
+    w16(lh,10,0);    // mod time
+    w16(lh,12,0);    // mod date
+    w32(lh,14,crc);
+    w32(lh,18,db.length);
+    w32(lh,22,db.length);
+    w16(lh,26,nb.length);
+    w16(lh,28,0);    // extra field len
+    var lhBytes=new Uint8Array(lhBuf);
+    lhBytes.set(nb,30);
+    return{name:nb,data:db,crc:crc,lhBytes:lhBytes,size:db.length};
+  }
+
+  function buildZip(entries){
+    // Calculate total size
+    var localSize=0;
+    entries.forEach(function(e){localSize+=e.lhBytes.length+e.data.length;});
+    var cdEntrySize=entries.reduce(function(s,e){return s+46+e.name.length;},0);
+    var totalSize=localSize+cdEntrySize+22;
+
+    var buf=new ArrayBuffer(totalSize);
+    var view=new DataView(buf);
+    var bytes=new Uint8Array(buf);
+    var pos=0,offsets=[];
+
+    // Write local file entries
+    entries.forEach(function(e){
+      offsets.push(pos);
+      bytes.set(e.lhBytes,pos); pos+=e.lhBytes.length;
+      bytes.set(e.data,pos);    pos+=e.data.length;
+    });
+
+    // Write central directory
+    var cdStart=pos;
+    entries.forEach(function(e,i){
+      view.setUint32(pos,0x02014B50,true);  // sig
+      view.setUint16(pos+4,20,true);   // version made
+      view.setUint16(pos+6,20,true);   // version needed
+      view.setUint16(pos+8,0,true);    // flags
+      view.setUint16(pos+10,0,true);   // compression
+      view.setUint16(pos+12,0,true);   // mod time
+      view.setUint16(pos+14,0,true);   // mod date
+      view.setUint32(pos+16,e.crc,true);
+      view.setUint32(pos+20,e.size,true);
+      view.setUint32(pos+24,e.size,true);
+      view.setUint16(pos+28,e.name.length,true);
+      view.setUint16(pos+30,0,true);   // extra
+      view.setUint16(pos+32,0,true);   // comment
+      view.setUint16(pos+34,0,true);   // disk start
+      view.setUint16(pos+36,0,true);   // int attrib
+      view.setUint32(pos+38,0,true);   // ext attrib
+      view.setUint32(pos+42,offsets[i],true); // local header offset
+      pos+=46;
+      bytes.set(e.name,pos); pos+=e.name.length;
+    });
+
+    // End of central directory
+    var cdSize=pos-cdStart;
+    view.setUint32(pos,0x06054B50,true);  // sig
+    view.setUint16(pos+4,0,true);  // disk num
+    view.setUint16(pos+6,0,true);  // start disk
+    view.setUint16(pos+8,entries.length,true);
+    view.setUint16(pos+10,entries.length,true);
+    view.setUint32(pos+12,cdSize,true);
+    view.setUint32(pos+16,cdStart,true);
+    view.setUint16(pos+20,0,true);
+
+    return new Uint8Array(buf);
+  }
+
+  // Assemble all XML files into ZIP entries
+  var entries=[];
+  entries.push(makeEntry('[Content_Types].xml', ctXML()));
+  entries.push(makeEntry('_rels/.rels', dotRels));
+  entries.push(makeEntry('xl/workbook.xml', wbXML()));
+  entries.push(makeEntry('xl/_rels/workbook.xml.rels', wbRels()));
+  sheets.forEach(function(sh,i){
+    entries.push(makeEntry('xl/worksheets/sheet'+(i+1)+'.xml', wsXML(sh.data)));
+  });
+  entries.push(makeEntry('xl/sharedStrings.xml', sstXML()));
+
+  var zip=buildZip(entries);
+  var blob=new Blob([zip],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');
+  a.href=url;a.download=filename;
+  document.body.appendChild(a);a.click();
+  setTimeout(function(){URL.revokeObjectURL(url);a.remove();},2000);
+}
+
+// ==============================================================
+// INIT
+// ==============================================================
+window.addEventListener('DOMContentLoaded',function(){
+  addGoal({name:'Retirement Fund',target:30000000,years:25,xirr:12,inflation:6});
+  addGoal({name:'Child Education', target:5000000, years:15,xirr:11,inflation:8});
+  addGoal({name:'Home Purchase',   target:10000000,years:10,xirr:10,inflation:5});
+  updateHints();
+});
+</script>
+</body>
+</html>
